@@ -1,6 +1,6 @@
 # encoding:utf-8
 
-#import vim
+import vim
 import urllib
 from bs4 import BeautifulSoup
 import re
@@ -8,54 +8,46 @@ import sys
 
 #line = 'aaa[](https://ambergonslibrary.com/)'
 #line = 'aaa[aaa](https://ambergonslibrary.com/)'
-
-#line = vim.current.line
-line = '[](https://ambergonslibrary.com/)[](https://ambergonslibrary.com/wordpress/vim/1867/)[](https://ambergonslibrary.com/wordpress/vim/1708/)'
-r = r'(\[(?P<title>.*?)\](?P<url>\(http.+?\)))'
+#line = '[](https://ambergonslibrary.com/)[](https://ambergonslibrary.com/wordpress/vim/1867/)[](https://ambergonslibrary.com/wordpress/vim/1708/)'
+line = vim.current.line
 
 
-def check_url(line,r):
+      
 
+
+
+
+line_parts = re.split(r'(\[.*?\]\(http.*?\))',line)
+result = ""
+for line_str in  line_parts :
+    if line_str == "":
+        continue
+
+    r = r'\[(?P<title>)\](?P<url>\(http.+?\))'
     p = re.compile(r)
-    m = p.search(line)
-    print m.groups()
-    print p.search(line).groups()
+    m = p.search(line_str)
+    
     if m == None:
         #matchしなかった場合
-        print('NO URL')
+        #print('NO URL')
         #sys.stderr.write('NO URL')
-        break
-    elif m.group('title') != "" :
-        print("already set title")
-        break
-
+        result = result + line_str
+        continue
     elif m.group('title') == "" :
         #titleが挿入されていない場合のみ
-        #set_url()
+        url = m.group('url').replace('(','').replace(')','')
 
+        html = urllib.urlopen(url)
+        soup = BeautifulSoup(html,"html.parser")
+        text = soup.title.string
+        title_text = text.encode('utf-8')
 
-def set_url():
-    url = m.group('url').replace('(','').replace(')','')
-      
-    html = urllib.urlopen(url)
-    soup = BeautifulSoup(html,"html.parser")
-    text = soup.title.string
-    title_text = text.encode('utf-8')
+        xxx = re.sub(r'\[\]','[' + title_text + ']',line_str ,count=1)
+        result = result + xxx
 
-#    vim.current.line = re.sub(r'\[\]','[' + title_text + ']',line)
-    print('match')
-    print(re.sub(r'\[\]','[' + title_text + ']',line ,count=1))
-
-check_url(line,r)
-
-
-
-
-##test
-#[](https://ambergonslibrary.com/)
-#[](https://ambergonslibrary.com/wordpress/vim/1867/)
-#[](https://ambergonslibrary.com/wordpress/vim/1708/)
-
-#[](https://ambergonslibrary.com/)[](https://ambergonslibrary.com/wordpress/vim/1867/)[](https://ambergonslibrary.com/wordpress/vim/1708/)
-
+    else :
+        result = result + line_str
+        
+#print result
+vim.current.line = re.sub(r'\[\]','[' + title_text + ']',line)
 
